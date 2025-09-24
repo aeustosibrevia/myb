@@ -34,8 +34,6 @@ Thumbs.db
 *.njsproj
 *.sln
 
-# Optional lockfiles
-package-lock.json
 
 # Misc
 *.swp
