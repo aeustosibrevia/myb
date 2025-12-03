@@ -1,92 +1,68 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { tasks, userMessages, users } from '../data/data';
-import { Task } from './task.model';
-import { UserMessage } from '../user-message/user-message.model';
+import { tasks } from "../data/data";
+import { Task } from "./task.model";
+import { generateId } from "../utils/id";
 
-@Injectable()
 export class TaskService {
-  private taskIdCounter = 1;
-  private messageIdCounter = 1;
-
-  createTask(userId: number, title: string, description?: string, advice?: string): Task {
-    const newTask: Task = {
-      id: this.taskIdCounter++,
-      userId,
-      title,
-      description,
-      status: 'pending',
-      createdAt: new Date(),
-    };
-    tasks.push(newTask);
-
-    if (advice) {
-      const message: UserMessage = {
-        id: this.messageIdCounter++,
-        userId,
-        type: 'advice',
-        message: advice,
-        createdAt: new Date(),
-      };
-      userMessages.push(message);
-    }
-
-    return newTask;
+  static getAllByUser(user_id: number): Task[] {
+    return tasks.filter(t => t.user_id === user_id);
   }
 
-  completeTask(taskId: number): Task {
-    const task = tasks.find((t) => t.id === taskId);
+  static getById(id: number): Task | undefined {
+    return tasks.find(t => t.id === id);
+  }
 
-    if (!task) {
-      throw new NotFoundException('Task not found');
-    }
+  static create(data: {
+    user_id: number;
+    title: string;
+    description: string;
+    deadline: Date;
+    difficulty: number;
+    cost_if_failed: number;
+  }): Task {
+    const task = new Task();
+    task.id = generateId();
+    task.user_id = data.user_id;
+    task.title = data.title;
+    task.description = data.description;
+    task.deadline = data.deadline;
+    task.created_at = new Date();
+    task.difficulty = data.difficulty;
+    task.cost_if_failed = data.cost_if_failed;
+    task.status = "pending";
 
-    if (task.status === 'completed') {
-      return task;
-    }
-
-    task.status = 'completed';
-    task.completedAt = new Date();
-
-    const user = users.find((u) => u.id === task.userId);
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    user.xp += 10;
-    user.streakDays += 1;
-
-    const oldRank = user.currentRankId;
-    const newRank = this.calculateRank(user.xp);
-
-    if (newRank !== oldRank) {
-      user.currentRankId = newRank;
-
-      userMessages.push({
-        id: this.messageIdCounter++,
-        userId: user.id,
-        type: 'motivation',
-        message: `Вітаємо! Ти отримав новий ранг: ${newRank}`,
-        createdAt: new Date(),
-      });
-    }
-
-    userMessages.push({
-      id: this.messageIdCounter++,
-      userId: user.id,
-      type: 'motivation',
-      message: 'Ти виконав задачу',
-      createdAt: new Date(),
-    });
-
+    tasks.push(task);
     return task;
   }
 
-  // Simple logic. Change later
-  private calculateRank(xp: number): number {
-    if (xp > 200) return 4;
-    if (xp > 100) return 3;
-    if (xp > 50) return 2;
-    return 1;
+  static update(id: number, data: Partial<Omit<Task, "id" | "user_id" | "created_at">>): Task | undefined {
+    const task = tasks.find(t => t.id === id);
+    if (!task) return undefined;
+
+    Object.assign(task, data);
+    return task;
+  }
+
+  static delete(id: number): boolean {
+    const index = tasks.findIndex(t => t.id === id);
+    if (index === -1) return false;
+
+    tasks.splice(index, 1);
+    return true;
+  }
+
+  static complete(id: number): Task | undefined {
+    const task = tasks.find(t => t.id === id);
+    if (!task) return undefined;
+
+    task.status = "completed";
+    return task;
+  }
+
+  static fail(id: number): Task | undefined {
+    const task = tasks.find(t => t.id === id);
+    if (!task) return undefined;
+
+    task.status = "failed";
+    return task;
   }
 }

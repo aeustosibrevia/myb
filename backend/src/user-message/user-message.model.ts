@@ -1,7 +1,10 @@
-export interface UserMessage {
+export class UserMessage {
   id: number;
-  userId: number;
-  type: 'advice' | 'motivation' | 'encouragement';
-  message: string;
-  createdAt: Date;
+  user_id: number;
+  task_id?: number | null;
+  type: 'motivation' | 'reminder' | 'failure';
+  subtype?: string | null;
+  message_text: string;
+  saved_amount?: number | null;
+  created_at: Date;
 }

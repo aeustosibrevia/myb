@@ -1,7 +1,11 @@
-export interface User {
+export class User {
   id: number;
-  name: string;
+  username: string;
+  email: string;
+  password_hash: string;
+  created_at: Date;
   xp: number;
-  streakDays: number;
-  currentRankId: number;
+  current_rank_id: number;
+  card_token?: string | null;
+  is_card_verified: boolean;
 }
