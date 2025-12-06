@@ -1,6 +1,9 @@
-import { tasks } from "../data/data";
+import { tasks, users, ranks } from "../data/data";
 import { Task } from "./task.model";
 import { generateId } from "../utils/id";
+
+const XP_GAIN = { 1: 5, 2: 10, 3: 15, 4: 20, 5: 25 };
+const XP_LOSS = { 1: 25, 2: 20, 3: 15, 4: 10, 5: 5 };
 
 export class TaskService {
   static getAllByUser(user_id: number): Task[] {
@@ -55,6 +58,7 @@ export class TaskService {
     if (!task) return undefined;
 
     task.status = "completed";
+    this.updateUserXp(task.user_id, XP_GAIN[task.difficulty]);
     return task;
   }
 
@@ -63,6 +67,26 @@ export class TaskService {
     if (!task) return undefined;
 
     task.status = "failed";
+    this.updateUserXp(task.user_id, -XP_LOSS[task.difficulty]);
     return task;
+  }
+
+  private static updateUserXp(user_id: number, xpChange: number) {
+    const user = users.find(u => u.id === user_id);
+    if (!user) return;
+
+    user.xp += xpChange;
+    if (user.xp < 0) user.xp = 0;
+
+    user.current_rank_id = this.calculateRank(user.xp);
+  }
+
+  private static calculateRank(xp: number): number {
+    let rankId = 1;
+    for (const rank of ranks) {
+      if (xp >= rank.xp_required) rankId = rank.id;
+      else break;
+    }
+    return rankId;
   }
 }
